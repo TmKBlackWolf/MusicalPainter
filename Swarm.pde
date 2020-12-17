@@ -10,7 +10,7 @@ class Swarm  extends Thread{
   
 
 
-  Swarm(int numberOfParticles, int areaWidth, int areaHeight, int magicNumber)
+  Swarm(int numberOfParticles, int areaWidth, int areaHeight)
   {
     this.magicNumber = magicNumber;
     
@@ -24,7 +24,7 @@ class Swarm  extends Thread{
 
     for ( int i = 0; i < this.numberOfParticles; i++)
     {
-      this.particles[i] = new Particle((i*this.magicNumber) %256);
+      this.particles[i] = new Particle(i % 256);
     }
   }
   
