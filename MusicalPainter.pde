@@ -1,4 +1,4 @@
-import processing.sound.*;  //<>//
+import processing.sound.*;  //<>// //<>//
 
 FFT fft;
 AudioIn in;
@@ -34,7 +34,7 @@ int f_min = 50;
 int f_max = 10000;
 float[] old_spectrum = new float[bands]; 
 
-Swarm swarm;
+BoidSwarm swarm;
 
 void setup() {
   colorMode(HSB);
@@ -42,7 +42,7 @@ void setup() {
   //size(1600, 1200, P2D );
   background(0);
 
-  swarm = new Swarm( bands*10, width, height); 
+  swarm = new BoidSwarm( bands*1, width, height); 
 
 
   for ( int i = 0; i < bands; i++)
@@ -50,7 +50,8 @@ void setup() {
     max_a[i] = 10.;
   }
 
-  simplex_noise = new OpenSimplexNoise((int)random(0, 25000));
+  //simplex_noise = new OpenSimplexNoise((int)random(0, 25000));
+  simplex_noise = new OpenSimplexNoise(1);
 
 
   noiseDetail(25);
@@ -69,6 +70,12 @@ void setup() {
 }
 
 void draw() { 
+  noStroke();
+  fill(0, 10);
+  //rect(0,0, width, height);
+  println(frameRate);
+  println(deltaT);
+  println();
 
 
   float currentAmplitudes[] = new float[bands];
@@ -145,7 +152,7 @@ void continousParticleUpdate()
       currentAmplitude = currentAmplitudes[i % bands];
       maxAmplitude = maxAmplitudes[i % bands];
 
-      Particle p= swarm.particles[i];  
+      Boid p= swarm.particles[i];  
 
       PVector particlePosition = p.pos;
       float noise_val = current_noise_function(p.pos.x, p.pos.y, height/2, zoff + (p.colour  *0.001));
@@ -157,6 +164,7 @@ void continousParticleUpdate()
       //float amp =  0;
       f.mult(random(r_min, r_max)+amp);
       p.applyForce(f);
+      p.flock(swarm);
       p.doSubstepWithoutForce(deltaT);
     }  
 
@@ -233,5 +241,5 @@ float current_noise_function(float x, float y, float r, float toff)
 void mousePressed() {
   zoff += 1000;
   
-  saveFrame("output/frame_####.png");
+  //saveFrame("output/frame_####.png");
 }

@@ -128,7 +128,7 @@ class Particle  extends ReentrantLock {
       if (this.drawVel.mag() < height/4)
         line(this.pos.x, this.pos.y, this.pos.x-this.drawVel.x, this.pos.y- this.drawVel.y);
 
-      stroke(255);
+      //stroke(255);
       //point(this.pos.x, this.pos.y);
       this.drawVel.mult(0);
       this.wasUpdated = false;
