@@ -15,7 +15,7 @@ Processing Foundation
 Coding Train on YouTube
 
 ### Musical Artists
-Sofia 
+Sofia P.
 
 ### MVP
 A fluffy bunny from the moon
