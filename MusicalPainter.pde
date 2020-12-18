@@ -1,4 +1,6 @@
-import processing.sound.*;  //<>//
+import processing.sound.*;  //<>// //<>//
+
+PImage baseImage;
 
 FFT fft;
 AudioIn in;
@@ -41,6 +43,9 @@ void setup() {
   fullScreen(P2D);
   //size(1600, 1200, P2D );
   background(0);
+  baseImage = loadImage("winter-1920.jpg");
+  baseImage.resize(0, height);
+  
 
   swarm = new Swarm( bands*10, width, height); 
 
@@ -86,25 +91,34 @@ void draw() {
     float sat = 0;
     float bright = 0;
     float alpha = 0;
-    if (maxAmplitude > 0)
-    {
-      sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
-      bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
 
-      alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
-    }
 
     Particle p = swarm.particles[i]; 
     if (p.tryLock())
     {
+      color baseColour = get_image_color(floor(p.pos.x), floor(p.pos.y));
+      sat = saturation(baseColour);
+      bright = brightness(baseColour);
+      if (maxAmplitude > 0)
+      {
+        //sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
+        //bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
+
+        alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
+      }
       stroke(p.colour, sat, bright, alpha);
       p.display();
       p.unlock();
     }
-  } 
+  }
 }
 
+color get_image_color(int x, int y)
+{
+  baseImage.loadPixels();
 
+  return baseImage.pixels[(((x+100*width )% width)+ ((y +100*height)% height )* baseImage.width) ];
+}
 
 void loadCurrentSpectrum(float amplitudes[], float maximumAmplitudes[])
 {
@@ -120,7 +134,7 @@ void continousParticleUpdate()
 {
 
   int start_time;
-  
+
   for (int i = 0; i< bands; i++) {
     old_spectrum[i] = 0.;
   }
@@ -164,7 +178,7 @@ void continousParticleUpdate()
     synchronized (spectrumMutex) {
       zoff += euclidiean_distance(spectrum, old_spectrum)*deltaT*10;
     } 
-    
+
     deltaT =(float)(millis()-start_time)*6. /1000.;
   }
 }
@@ -178,7 +192,7 @@ void updateFFT()
       old_spectrum[i] = spectrum[i];
       max_a[i] *= 0.99999;
     }
-     
+
     fft.analyze(spectrum);
     for (int i = 0; i < bands; i++) {
       float v = spectrum[i];     
@@ -232,6 +246,6 @@ float current_noise_function(float x, float y, float r, float toff)
 
 void mousePressed() {
   zoff += 1000;
-  
+
   saveFrame("output/frame_####.png");
 }
