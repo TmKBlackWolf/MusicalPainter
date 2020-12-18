@@ -232,4 +232,6 @@ float current_noise_function(float x, float y, float r, float toff)
 
 void mousePressed() {
   zoff += 1000;
+  
+  saveFrame("output/frame_####.png");
 }
