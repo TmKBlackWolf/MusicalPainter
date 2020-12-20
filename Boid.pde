@@ -1,7 +1,7 @@
 class Boid extends Particle
 {
   float alignValue = 0.25;
-  float cohesionValue = 0.01;
+  float cohesionValue = 0.10;
   float seperationValue = 0.5;
 
 

@@ -1,6 +1,7 @@
-import processing.sound.*;  //<>// //<>//
+import processing.sound.*;  //<>// //<>// //<>//
 
 PImage baseImage;
+PVector ImageCenterOffset;
 
 FFT fft;
 AudioIn in;
@@ -19,25 +20,54 @@ BoidSwarm swarm;
 QuadTree tree;
 Object treeMutex = new Object();
 float deltaT = 0.001;
-int r_max = 60;
-int r_min = 50;
+int r_max = 100;
+int r_min = 80;
 
 
-int warmupCounter = 60 * 10;
+int warmupCounter = 60 * 1;
 
 void setup() {
   fullScreen(P2D);
   colorMode(HSB);
   background(0);
-  baseImage = loadImage("winter-1920.jpg");
-  baseImage.resize(0, height);
-  
 
+
+  setupBaseImage();
   setupParticles();
   setupNoiseField();
   setupAudioInput();
   startAudioProcessingThread();
   startParticleThread();
+}
+
+
+void setupBaseImage()
+{
+
+  //baseImage = loadImage("input/winter-1920.jpg");
+  baseImage = loadImage("input/Kassenbild.png");
+  float imageAspectRatio = baseImage.width/(float)baseImage.height;
+  float screenAspectRatio = width/(float)height;
+
+  if (  imageAspectRatio > screenAspectRatio)
+  {
+    resizeImageToHeight(baseImage);
+  }
+  else
+  {
+    resizeImageToWidth(baseImage);
+  }
+  ImageCenterOffset = new PVector((width - baseImage.width) /2., (height - baseImage.height) /2.);
+}
+
+void resizeImageToHeight(PImage img)
+{
+  img.resize(0, height);
+}
+
+void resizeImageToWidth(PImage img)
+{
+  img.resize(width, 0);
 }
 
 void setupParticles()
@@ -209,18 +239,20 @@ void drawFFT()
 
 void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
 {
+
   float sat = 0;
   float bright = 0;
   float alpha = 0;
-  color baseColour = get_image_color(floor(p.pos.x), floor(p.pos.y));
+  Boid p = swarm.particles[particleIndex]; 
+  color baseColour = get_image_color(floor(p.getX()), floor(p.getY()));
   sat = saturation(baseColour);
   bright = brightness(baseColour);
   if (maxAmplitude > 0)
   {
-    alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
+    alpha = map(currentAmplitude, 0, maxAmplitude, 10, 127);
   }
 
-  Boid p = swarm.particles[particleIndex]; 
+
   if (p.tryLock())
   {
     stroke(p.colour, sat, bright, alpha);
@@ -289,7 +321,7 @@ Boid[] queryTree(Boid p)
 color get_image_color(int x, int y)
 {
   baseImage.loadPixels();
-  return baseImage.pixels[(((x+100*width )% width)+ ((y +100*height)% height )* baseImage.width) ];
+  return baseImage.pixels[(((x -floor(ImageCenterOffset.x) ))+ ((y - floor(ImageCenterOffset.y) ) )* baseImage.width) ];
 }
 
 void loadCurrentSpectrum(float amplitudes[], float maximumAmplitudes[])
@@ -335,7 +367,7 @@ void continousParticleUpdate()
       float amp =  0;
       if (maxAmplitude > 0)
       {
-        amp = map(currentAmplitude, 0, maxAmplitude, 0., 30.);
+        amp = map(currentAmplitude, 0, maxAmplitude, 0., 50.);
       }   
       f.mult(random(r_min, r_max) + amp);
       p.applyForce(f);
@@ -348,7 +380,6 @@ void continousParticleUpdate()
       zoff += euclidiean_distance(spectrum, old_spectrum)*deltaT*300;
     } 
     deltaT =(millis()-start_time) /1000.;
-
   }
 }
 
@@ -424,5 +455,4 @@ void mousePressed() {
     +"_frame_####.png";
 
   saveFrame(outputFileName);
-
 }
