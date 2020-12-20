@@ -4,76 +4,94 @@ PImage baseImage;
 
 FFT fft;
 AudioIn in;
-
 int bands = 512;
 float[] spectrum = new float[bands];
-
-float deltaT = 0.001;
-
+float[] old_spectrum = new float[bands]; 
+float max_a[] = new float[bands];
+float expectedMaxAmplitude = 0.1;
 Object spectrumMutex = new Object();
 
-
+OpenSimplexNoise simplex_noise;
 float scale = 0.001;
 float zoff = 0;
 
+BoidSwarm swarm;
+QuadTree tree;
+Object treeMutex = new Object();
+float deltaT = 0.001;
+int r_max = 60;
+int r_min = 50;
 
 
-OpenSimplexNoise simplex_noise;
-
-int r_max = 10;
-int r_min = 9;
-
-float max_a[] = new float[bands];
-
-float current_v[] = new float[bands];
-float old_v[] = new float[bands];
-
-boolean zoff_was_updated = true;
-
-
-int f_start = 0;
-int f_min = 50;
-int f_max = 10000;
-float[] old_spectrum = new float[bands]; 
-
-Swarm swarm;
+int warmupCounter = 60 * 10;
 
 void setup() {
-  colorMode(HSB);
   fullScreen(P2D);
-  //size(1600, 1200, P2D );
+  colorMode(HSB);
   background(0);
   baseImage = loadImage("winter-1920.jpg");
   baseImage.resize(0, height);
   
 
-  swarm = new Swarm( bands*10, width, height); 
+  setupParticles();
+  setupNoiseField();
+  setupAudioInput();
+  startAudioProcessingThread();
+  startParticleThread();
+}
 
+void setupParticles()
+{
+  swarm = new BoidSwarm( bands*5, width, height); 
+  buildTree();
+}
 
+void setupNoiseField()
+{
+  simplex_noise = new OpenSimplexNoise((int)random(0, 25000));
+  noiseDetail(25);
+}
+
+void setupAudioInput()
+{
   for ( int i = 0; i < bands; i++)
   {
-    max_a[i] = 10.;
+    max_a[i] = expectedMaxAmplitude;
   }
 
-  simplex_noise = new OpenSimplexNoise((int)random(0, 25000));
-
-
-  noiseDetail(25);
-
-  // Create an Input stream which is routed into the Amplitude analyzer
   fft = new FFT(this, bands);
+
   in = new AudioIn(this, 1);
   in.start();
-
   fft.input(in);
-
-
+}
+void startAudioProcessingThread()
+{
   thread("runContinousFFTUpdate");
+}
 
+void startParticleThread()
+{
   thread("continousParticleUpdate");
 }
 
+
+void printDebugInfo()
+{
+  println("Frame rate  : ", frameRate);
+  println("Update rate : ", 1./deltaT);
+  println("Delta_T     : ", deltaT);
+  println("Z_off       : ", zoff);
+  println("A_max       : ", max(max_a));
+  println();
+}
+
 void draw() { 
+  printDebugInfo();
+
+
+  drawWarmUp();
+
 
 
   float currentAmplitudes[] = new float[bands];
@@ -81,42 +99,196 @@ void draw() {
 
   loadCurrentSpectrum(currentAmplitudes, maxAmplitudes);
 
-
-
   for (int i = 0; i < swarm.numberOfParticles; i++) 
   {
     float currentAmplitude = currentAmplitudes[i % bands];
     float maxAmplitude = maxAmplitudes[i % bands];
+    drawParticle(i, currentAmplitude, maxAmplitude );
+  }
+}
 
-    float sat = 0;
-    float bright = 0;
-    float alpha = 0;
+
+void drawWarmUp()
+{
+  if (warmupCounter > 0)
+  {    
+    fill(0);
+    noStroke();
+    rect(0, 0, width, height);
 
 
-    Particle p = swarm.particles[i]; 
-    if (p.tryLock())
+
+    stroke(255);
+    noFill();
+    //showTree();
+    showField();
+    strokeWeight(3);
+    for (int i = 0; i < swarm.numberOfParticles; i++) 
     {
-      color baseColour = get_image_color(floor(p.pos.x), floor(p.pos.y));
-      sat = saturation(baseColour);
-      bright = brightness(baseColour);
-      if (maxAmplitude > 0)
+      Boid p = swarm.particles[i]; 
+      if (p.tryLock())
       {
-        //sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
-        //bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
 
-        alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
+        p.displayPos();
+        p.unlock();
       }
-      stroke(p.colour, sat, bright, alpha);
-      p.display();
-      p.unlock();
+    }
+
+    drawFFT();
+
+    if (warmupCounter == 1)
+    {
+      noStroke();
+      fill(0);
+      rect(0, 0, width, height);
+    }
+    warmupCounter--;
+  }
+}
+
+
+void drawFFT()
+{
+  pushMatrix();
+
+  float fftViewScale = 1./4.;
+
+
+  translate(width *(1- fftViewScale), height*(1-fftViewScale));
+  float viewWidth = width * fftViewScale;
+  float viewHeight = height *fftViewScale;
+
+
+  float barWidth = viewWidth / bands;
+
+  strokeWeight(1);
+  stroke(127);
+  fill(255);
+  rect(0, 0, viewWidth, viewHeight);
+
+  float currentAmplitudes[] = new float[bands];
+  float maxAmplitudes[] = new float[bands];
+
+  loadCurrentSpectrum(currentAmplitudes, maxAmplitudes);
+
+  for (int i = 0; i < bands; i++)  
+  {
+    float currentAmplitude = currentAmplitudes[i];
+    float maxAmplitude = maxAmplitudes[i];
+    stroke(127);
+    fill(127);
+    rect(
+      i * barWidth, 
+      viewHeight-map(maxAmplitude, 0, expectedMaxAmplitude, 0, viewHeight), 
+      (i+1)*barWidth, 
+      viewHeight);
+
+    stroke(i%256, 255, 255);
+    fill(i%256, 255, 255);
+    rect(
+      i * barWidth, 
+      viewHeight-map(currentAmplitude, 0, expectedMaxAmplitude, 0, viewHeight), 
+      (i+1)*barWidth, 
+      viewHeight);
+
+    float sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
+    float bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
+    //float alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
+
+    noStroke();
+    fill(i%256, sat, bright);
+    rect(
+      i * barWidth, 
+      0, 
+      (i+1)*barWidth, 
+      barWidth*10);
+  }
+  popMatrix();
+}
+
+
+void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
+{
+  float sat = 0;
+  float bright = 0;
+  float alpha = 0;
+  color baseColour = get_image_color(floor(p.pos.x), floor(p.pos.y));
+  sat = saturation(baseColour);
+  bright = brightness(baseColour);
+  if (maxAmplitude > 0)
+  {
+    alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
+  }
+
+  Boid p = swarm.particles[particleIndex]; 
+  if (p.tryLock())
+  {
+    stroke(p.colour, sat, bright, alpha);
+    p.display();
+    p.unlock();
+  }
+}
+
+void buildTree()
+{
+  synchronized(treeMutex)
+  {
+    tree = new QuadTree();
+    tree.insert(swarm.particles);
+  }
+}
+
+void showField()
+{
+  for (int x = 0; x < width; x += 50)
+  {
+    for (int y = 0; y < height; y += 50)
+    {
+
+      float noise_val = current_noise_function(x, y, height/2, zoff );
+      PVector f =  PVector.fromAngle(noise_val*PI*4);
+      f.normalize();
+      f.mult(25);
+      strokeWeight(1);
+      line(x, y, x + f.x, y + f.y);
+      strokeWeight(3);
+      point(x + f.x, y + f.y);
     }
   }
 }
 
+
+void showTree()
+{
+  synchronized(treeMutex)
+  {
+    tree.show();
+  }
+}
+
+Boid[] queryTree(Boid p)
+{
+  p.lock();
+  Rectangle area = p.getSearchArea();
+  p.unlock();
+  ArrayList<Boid> ret;
+  synchronized(treeMutex)
+  {
+    ret = tree.queryArea(area);
+  }
+  if (ret == null)
+  {
+    return new Boid[0];
+  } else
+  {
+    return ret.toArray(new Boid[0]);
+  }
+}
+
+
 color get_image_color(int x, int y)
 {
   baseImage.loadPixels();
-
   return baseImage.pixels[(((x+100*width )% width)+ ((y +100*height)% height )* baseImage.width) ];
 }
 
@@ -141,16 +313,11 @@ void continousParticleUpdate()
   for (;; )
   {    
     start_time = millis();
+    buildTree();
 
     float currentAmplitudes[] = new float[bands];
     float maxAmplitudes[] = new float[bands];
-    synchronized (spectrumMutex) {
-      for (int i = 0; i< bands; i++) {
-        currentAmplitudes[i] = spectrum[i];
-        maxAmplitudes[i] = max_a[i];
-      }
-    }
-
+    loadCurrentSpectrum(currentAmplitudes, maxAmplitudes );
 
     float currentAmplitude;
     float maxAmplitude;
@@ -159,7 +326,7 @@ void continousParticleUpdate()
       currentAmplitude = currentAmplitudes[i % bands];
       maxAmplitude = maxAmplitudes[i % bands];
 
-      Particle p= swarm.particles[i];  
+      Boid p= swarm.particles[i];  
 
       PVector particlePosition = p.pos;
       float noise_val = current_noise_function(p.pos.x, p.pos.y, height/2, zoff + (p.colour  *0.001));
@@ -167,19 +334,21 @@ void continousParticleUpdate()
       f.normalize();
       float amp =  0;
       if (maxAmplitude > 0)
-        amp = map(currentAmplitude, 0, maxAmplitude, 0., 3);
-      //float amp =  0;
-      f.mult(random(r_min, r_max)+amp);
+      {
+        amp = map(currentAmplitude, 0, maxAmplitude, 0., 30.);
+      }   
+      f.mult(random(r_min, r_max) + amp);
       p.applyForce(f);
+      p.flock(queryTree(p));
       p.doSubstepWithoutForce(deltaT);
     }  
 
     float spectrum_sum = 0;
     synchronized (spectrumMutex) {
-      zoff += euclidiean_distance(spectrum, old_spectrum)*deltaT*10;
+      zoff += euclidiean_distance(spectrum, old_spectrum)*deltaT*300;
     } 
+    deltaT =(millis()-start_time) /1000.;
 
-    deltaT =(float)(millis()-start_time)*6. /1000.;
   }
 }
 
@@ -208,9 +377,10 @@ void updateFFT()
 void runContinousFFTUpdate()
 {
   for (;; )
+  {
     updateFFT();
+  }
 }
-
 
 
 float euclidiean_distance(float[] a, float[] b)
@@ -247,5 +417,12 @@ float current_noise_function(float x, float y, float r, float toff)
 void mousePressed() {
   zoff += 1000;
 
-  saveFrame("output/frame_####.png");
+
+  String outputFileName ="output/"+ String.valueOf(year()) + "-" 
+    +String.valueOf(month()) + "-" 
+    +String.valueOf(day())
+    +"_frame_####.png";
+
+  saveFrame(outputFileName);
+
 }
