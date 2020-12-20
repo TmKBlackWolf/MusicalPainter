@@ -1,11 +1,15 @@
 class Boid extends Particle
 {
-  float alignValue = 0.05;
-  float cohesionValue = 0.05;
-  float seperationValue = 0.05;
-  int alignmentPerceptionRadius = 50;
-  int cohesionPerceptionRadius = 100;
-  int separationPerceptionRadius = 50;
+  float alignValue = 0.02;
+  float cohesionValue = 0.04;
+  float seperationValue = 0.04;
+
+
+  float alignmentPerceptionRadius = 50;
+  float cohesionPerceptionRadius = 50;
+  float separationPerceptionRadius = 50;
+
+  float searchRadius = 50;
   Boid()
   {
     super();
@@ -25,10 +29,10 @@ class Boid extends Particle
 
   Boid(int x, int y, int colour)
   {
-    super(x,y, colour);
+    super(x, y, colour);
   }
-  
-  void flock(BoidSwarm swarm)
+
+  void flock(Boid[] swarm)
   {
     PVector alignmentForce = this.getAlignmentForce(swarm);
     PVector cohesionForce = this.getCohesionForce(swarm);
@@ -41,14 +45,14 @@ class Boid extends Particle
     this.applyForce(alignmentForce);
     this.applyForce(cohesionForce);
     this.applyForce(separationForce);
-    
   }
-  
-  PVector getAlignmentForce(BoidSwarm swarm) {
-    
+
+  PVector getAlignmentForce(Boid[] swarm) {
+
     PVector steeringForce = new PVector();
     int total = 0;
-    for (Particle other: swarm.particles) {
+    for (Particle other : swarm) {
+      
       float d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
       if (other != this && d < this.alignmentPerceptionRadius) {
         steeringForce.add(other.vel);
@@ -61,14 +65,14 @@ class Boid extends Particle
     }
     return steeringForce;
   }
-  
-  
-  
-  PVector getCohesionForce(BoidSwarm swarm) {
-    
+
+
+
+  PVector getCohesionForce(Boid[] swarm) {
+
     PVector steeringForce = new PVector();
     int total = 0;
-    for (Particle other: swarm.particles) {
+    for (Particle other : swarm) {
       float d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
       if (other != this && d < this.cohesionPerceptionRadius) {
         steeringForce.add(other.pos);
@@ -81,14 +85,14 @@ class Boid extends Particle
     }
     return steeringForce;
   }
-  
-  
-  
-    PVector getSeparationForce(BoidSwarm swarm) {
-    
+
+
+
+  PVector getSeparationForce(Boid[] swarm) {
+
     PVector steeringForce = new PVector();
     int total = 0;
-    for (Particle other: swarm.particles) {
+    for (Particle other : swarm) {
       float d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
       if (other != this && d < this.separationPerceptionRadius) {
         PVector diff = PVector.sub(this.pos, other.pos);
@@ -103,9 +107,13 @@ class Boid extends Particle
     }
     return steeringForce;
   }
-  
-  
-  
-  
-  
+
+  Rectangle getSearchArea()
+  {
+    return new Rectangle(
+      this.pos.x - searchRadius, 
+      this.pos.y - searchRadius, 
+      this.searchRadius * 2, 
+      this.searchRadius * 2);
+  }
 }

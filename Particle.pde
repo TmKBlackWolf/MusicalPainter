@@ -1,7 +1,7 @@
 import java.lang.*; //<>// //<>//
 import java.util.concurrent.locks.ReentrantLock;
 
-class Particle  extends ReentrantLock {
+class Particle  extends ReentrantLock implements Mapable {
   PVector pos;
   PVector vel;
   PVector drawVel;
@@ -73,7 +73,7 @@ class Particle  extends ReentrantLock {
 
   void update(float deltaT)
   {
-    
+
     this.vel.add(PVector.mult(this.acc, deltaT));    
     PVector dVel = PVector.mult(vel, deltaT); 
     this.pos.add(dVel);
@@ -111,6 +111,16 @@ class Particle  extends ReentrantLock {
     }
   }
 
+  float getX()
+  {
+    return this.pos.x;
+  }
+
+  float getY()
+  {
+    return this.pos.y;
+  }
+
 
   double mag_double(PVector p)
   {
@@ -127,12 +137,20 @@ class Particle  extends ReentrantLock {
     {
       if (this.drawVel.mag() < height/4)
         line(this.pos.x, this.pos.y, this.pos.x-this.drawVel.x, this.pos.y- this.drawVel.y);
-
-      //stroke(255);
-      //point(this.pos.x, this.pos.y);
+      if (debug)
+      {
+        stroke(255);
+        this.displayPos();
+      }
       this.drawVel.mult(0);
       this.wasUpdated = false;
     }
+  }
+
+
+  void displayPos()
+  {
+    point(this.pos.x, this.pos.y);
   }
 
   void edges()
