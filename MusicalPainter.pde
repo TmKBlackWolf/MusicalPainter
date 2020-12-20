@@ -1,7 +1,13 @@
-import processing.sound.*;  //<>// //<>// //<>//
+import processing.sound.*;   //<>//
 
+
+int inputFileIndex = 0;
 PImage baseImage;
 PVector ImageCenterOffset;
+int ImageChangeIntervalInSeconds = 300;
+Object imageMutex = new Object();
+
+final boolean useImages = true;
 
 FFT fft;
 AudioIn in;
@@ -24,15 +30,18 @@ int r_max = 100;
 int r_min = 80;
 
 
-int warmupCounter = 60 * 1;
+int warmupCounter = 60 * 3;
 
 void setup() {
   fullScreen(P2D);
   colorMode(HSB);
   background(0);
 
-
-  setupBaseImage();
+  if (useImages)
+  {
+    setupBaseImage();
+    thread("updateImagecontinously");
+  }
   setupParticles();
   setupNoiseField();
   setupAudioInput();
@@ -41,23 +50,32 @@ void setup() {
 }
 
 
-void setupBaseImage()
-{
 
-  //baseImage = loadImage("input/winter-1920.jpg");
-  baseImage = loadImage("input/Kassenbild.png");
-  float imageAspectRatio = baseImage.width/(float)baseImage.height;
+
+
+void setupBaseImage()
+{    
+  String inputPath = sketchPath("") + "\\input\\";
+  String[] filenames = new File(inputPath).list();
+
+  inputFileIndex = (inputFileIndex + filenames.length) % filenames.length;
+  PImage newImage= loadImage(inputPath + filenames[inputFileIndex]);
+
+  float imageAspectRatio = newImage.width/(float)newImage.height;
   float screenAspectRatio = width/(float)height;
 
   if (  imageAspectRatio > screenAspectRatio)
   {
-    resizeImageToHeight(baseImage);
-  }
-  else
+    resizeImageToHeight(newImage);
+  } else
   {
-    resizeImageToWidth(baseImage);
+    resizeImageToWidth(newImage);
   }
-  ImageCenterOffset = new PVector((width - baseImage.width) /2., (height - baseImage.height) /2.);
+  synchronized(imageMutex)
+  {
+    baseImage = newImage;
+    ImageCenterOffset = new PVector((width - baseImage.width) /2., (height - baseImage.height) /2.);
+  }
 }
 
 void resizeImageToHeight(PImage img)
@@ -133,7 +151,13 @@ void draw() {
   {
     float currentAmplitude = currentAmplitudes[i % bands];
     float maxAmplitude = maxAmplitudes[i % bands];
-    drawParticle(i, currentAmplitude, maxAmplitude );
+    if (useImages)
+    {
+      drawParticleUsingImage(i, currentAmplitude, maxAmplitude );
+    } else
+    {
+      drawParticle(i, currentAmplitude, maxAmplitude );
+    }
   }
 }
 
@@ -145,6 +169,10 @@ void drawWarmUp()
     fill(0);
     noStroke();
     rect(0, 0, width, height);
+    if (useImages)
+    {
+      image(baseImage, ImageCenterOffset.x, ImageCenterOffset.y);
+    }
 
 
 
@@ -237,12 +265,13 @@ void drawFFT()
 }
 
 
-void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
+void drawParticleUsingImage(int particleIndex, float currentAmplitude, float maxAmplitude)
 {
 
   float sat = 0;
   float bright = 0;
   float alpha = 0;
+
   Boid p = swarm.particles[particleIndex]; 
   color baseColour = get_image_color(floor(p.getX()), floor(p.getY()));
   sat = saturation(baseColour);
@@ -260,6 +289,29 @@ void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
     p.unlock();
   }
 }
+
+
+void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
+{
+  float sat = 0;
+  float bright = 0;
+  float alpha = 0;
+  if (maxAmplitude > 0)
+  {
+    sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
+    bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
+    alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
+  }
+
+  Boid p = swarm.particles[particleIndex]; 
+  if (p.tryLock())
+  {
+    stroke(p.colour, sat, bright, alpha);
+    p.display();
+    p.unlock();
+  }
+}
+
 
 void buildTree()
 {
@@ -320,8 +372,13 @@ Boid[] queryTree(Boid p)
 
 color get_image_color(int x, int y)
 {
-  baseImage.loadPixels();
-  return baseImage.pixels[(((x -floor(ImageCenterOffset.x) ))+ ((y - floor(ImageCenterOffset.y) ) )* baseImage.width) ];
+  color ret;
+  synchronized(imageMutex)
+  {
+    baseImage.loadPixels();
+    ret = baseImage.pixels[((((x -floor(ImageCenterOffset.x) ))+ ((y - floor(ImageCenterOffset.y) ) )* baseImage.width) + baseImage.pixels.length)% baseImage.pixels.length];
+  }
+  return ret;
 }
 
 void loadCurrentSpectrum(float amplitudes[], float maximumAmplitudes[])
@@ -446,8 +503,6 @@ float current_noise_function(float x, float y, float r, float toff)
 
 
 void mousePressed() {
-  zoff += 1000;
-
 
   String outputFileName ="output/"+ String.valueOf(year()) + "-" 
     +String.valueOf(month()) + "-" 
@@ -455,4 +510,45 @@ void mousePressed() {
     +"_frame_####.png";
 
   saveFrame(outputFileName);
+}
+
+
+void updateImagecontinously()
+{
+  for (;; )
+  {
+    delay(ImageChangeIntervalInSeconds*1000);
+    inputFileIndex++;
+    setupBaseImage();
+  }
+}
+
+void keyPressed() {
+  if (key == CODED) {
+    if (keyCode == RIGHT)
+    {
+      if (useImages)
+      {
+        inputFileIndex++;
+        setupBaseImage();
+      } else {
+        zoff += 10.;
+      }
+    } else if (keyCode == LEFT)
+    {
+      if (useImages)
+      {
+        inputFileIndex--;
+        setupBaseImage();
+      } else {
+        zoff -= 10.;
+      }
+    } else if (keyCode == UP)
+    {
+      zoff += 0.1;
+    } else if (keyCode == DOWN)
+    {
+      zoff -= 0.1;
+    }
+  }
 }

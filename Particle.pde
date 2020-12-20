@@ -1,4 +1,4 @@
-import java.lang.*; //<>// //<>// //<>//
+import java.lang.*; //<>// //<>// //<>// //<>//
 import java.util.concurrent.locks.ReentrantLock;
 
 class Particle  extends ReentrantLock implements Mapable {
@@ -56,7 +56,7 @@ class Particle  extends ReentrantLock implements Mapable {
     this.acc = new PVector(0, 0);
     this.wasUpdated = true;
 
-    this.res = -0.000001;
+    this.res = -0.01;
   }
 
   void update()
@@ -104,8 +104,7 @@ class Particle  extends ReentrantLock implements Mapable {
 
     float test = f.mag();
     if ( test != test)
-    {
-      println("NaN!");
+    {      
       this.applyForce(PVector.mult(this.vel, -1.));
     } else
     {
