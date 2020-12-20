@@ -1,4 +1,6 @@
-import processing.sound.*;  //<>//
+import processing.sound.*;  //<>// //<>//
+
+PImage baseImage;
 
 FFT fft;
 AudioIn in;
@@ -27,6 +29,9 @@ void setup() {
   fullScreen(P2D);
   colorMode(HSB);
   background(0);
+  baseImage = loadImage("winter-1920.jpg");
+  baseImage.resize(0, height);
+  
 
   setupParticles();
   setupNoiseField();
@@ -112,6 +117,7 @@ void drawWarmUp()
     rect(0, 0, width, height);
 
 
+
     stroke(255);
     noFill();
     //showTree();
@@ -151,6 +157,7 @@ void drawFFT()
   translate(width *(1- fftViewScale), height*(1-fftViewScale));
   float viewWidth = width * fftViewScale;
   float viewHeight = height *fftViewScale;
+
 
   float barWidth = viewWidth / bands;
 
@@ -205,11 +212,11 @@ void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
   float sat = 0;
   float bright = 0;
   float alpha = 0;
+  color baseColour = get_image_color(floor(p.pos.x), floor(p.pos.y));
+  sat = saturation(baseColour);
+  bright = brightness(baseColour);
   if (maxAmplitude > 0)
   {
-    sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
-    bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
-
     alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
   }
 
@@ -237,6 +244,7 @@ void showField()
   {
     for (int y = 0; y < height; y += 50)
     {
+
       float noise_val = current_noise_function(x, y, height/2, zoff );
       PVector f =  PVector.fromAngle(noise_val*PI*4);
       f.normalize();
@@ -277,6 +285,12 @@ Boid[] queryTree(Boid p)
   }
 }
 
+
+color get_image_color(int x, int y)
+{
+  baseImage.loadPixels();
+  return baseImage.pixels[(((x+100*width )% width)+ ((y +100*height)% height )* baseImage.width) ];
+}
 
 void loadCurrentSpectrum(float amplitudes[], float maximumAmplitudes[])
 {
@@ -334,6 +348,7 @@ void continousParticleUpdate()
       zoff += euclidiean_distance(spectrum, old_spectrum)*deltaT*300;
     } 
     deltaT =(millis()-start_time) /1000.;
+
   }
 }
 
@@ -402,10 +417,12 @@ float current_noise_function(float x, float y, float r, float toff)
 void mousePressed() {
   zoff += 1000;
 
+
   String outputFileName ="output/"+ String.valueOf(year()) + "-" 
     +String.valueOf(month()) + "-" 
     +String.valueOf(day())
     +"_frame_####.png";
 
   saveFrame(outputFileName);
+
 }
