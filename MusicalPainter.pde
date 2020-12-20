@@ -2,9 +2,7 @@ import processing.sound.*;  //<>// //<>//
 
 FFT fft;
 AudioIn in;
-//PinkNoise testIn;
 
-boolean debug = false;
 
 int bands = 512;
 float[] spectrum = new float[bands];
@@ -108,13 +106,6 @@ void printDebugInfo()
 
 void draw() { 
   printDebugInfo();
-
-  noStroke();
-  fill(0, 10);
-  if (debug)
-  {
-    rect(0, 0, width, height);
-  }
 
 
   drawWarmUp();

@@ -137,11 +137,6 @@ class Particle  extends ReentrantLock implements Mapable {
     {
       if (this.drawVel.mag() < height/4)
         line(this.pos.x, this.pos.y, this.pos.x-this.drawVel.x, this.pos.y- this.drawVel.y);
-      if (debug)
-      {
-        stroke(255);
-        this.displayPos();
-      }
       this.drawVel.mult(0);
       this.wasUpdated = false;
     }
