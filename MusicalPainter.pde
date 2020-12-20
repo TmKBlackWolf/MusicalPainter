@@ -1,45 +1,25 @@
-import processing.sound.*;  //<>// //<>//
+import processing.sound.*;  //<>//
 
 FFT fft;
 AudioIn in;
-
-
 int bands = 512;
 float[] spectrum = new float[bands];
-
-float deltaT = 0.001;
-float deltaT_Spectrum = 0.001;
-
+float[] old_spectrum = new float[bands]; 
+float max_a[] = new float[bands];
+float expectedMaxAmplitude = 0.1;
 Object spectrumMutex = new Object();
 
-
+OpenSimplexNoise simplex_noise;
 float scale = 0.001;
 float zoff = 0;
 
+BoidSwarm swarm;
 QuadTree tree;
 Object treeMutex = new Object();
-
-OpenSimplexNoise simplex_noise;
-
+float deltaT = 0.001;
 int r_max = 10;
 int r_min = 9;
 
-float max_a[] = new float[bands];
-
-float current_v[] = new float[bands];
-float old_v[] = new float[bands];
-
-boolean zoff_was_updated = true;
-
-float expectedMaxAmplitude = 0.1;
-
-
-int f_start = 0;
-int f_min = 50;
-int f_max = 10000;
-float[] old_spectrum = new float[bands]; 
-
-BoidSwarm swarm;
 
 int warmupCounter = 60 * 10;
 
@@ -74,15 +54,12 @@ void setupAudioInput()
     max_a[i] = expectedMaxAmplitude;
   }
 
-  // Create an Input stream which is routed into the Amplitude analyzer
   fft = new FFT(this, bands);
 
   in = new AudioIn(this, 1);
   in.start();
   fft.input(in);
 
-  //testIn = new PinkNoise(this);
-  //fft.input(testIn);
 }
 void startAudioProcessingThread()
 {
@@ -398,7 +375,6 @@ void runContinousFFTUpdate()
     updateFFT();
   }
 }
-
 
 
 float euclidiean_distance(float[] a, float[] b)
