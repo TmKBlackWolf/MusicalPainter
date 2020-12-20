@@ -17,8 +17,8 @@ BoidSwarm swarm;
 QuadTree tree;
 Object treeMutex = new Object();
 float deltaT = 0.001;
-int r_max = 10;
-int r_min = 9;
+int r_max = 60;
+int r_min = 50;
 
 
 int warmupCounter = 60 * 10;
@@ -59,7 +59,6 @@ void setupAudioInput()
   in = new AudioIn(this, 1);
   in.start();
   fft.input(in);
-
 }
 void startAudioProcessingThread()
 {
@@ -74,10 +73,11 @@ void startParticleThread()
 
 void printDebugInfo()
 {
-  println("Frame rate: ", frameRate);
-  println("Delta_T   : ", deltaT);
-  println("Z_off     : ", zoff);
-  println("A_max     : ", max(max_a));
+  println("Frame rate  : ", frameRate);
+  println("Update rate : ", 1./deltaT);
+  println("Delta_T     : ", deltaT);
+  println("Z_off       : ", zoff);
+  println("A_max       : ", max(max_a));
   println();
 }
 
@@ -108,6 +108,7 @@ void drawWarmUp()
   if (warmupCounter > 0)
   {    
     fill(0);
+    noStroke();
     rect(0, 0, width, height);
 
 
@@ -298,18 +299,11 @@ void continousParticleUpdate()
   for (;; )
   {    
     start_time = millis();
-
+    buildTree();
 
     float currentAmplitudes[] = new float[bands];
     float maxAmplitudes[] = new float[bands];
-    synchronized (spectrumMutex) {
-      for (int i = 0; i< bands; i++) {
-        currentAmplitudes[i] = spectrum[i];
-        maxAmplitudes[i] = max_a[i];
-      }
-    }
-    buildTree();
-
+    loadCurrentSpectrum(currentAmplitudes, maxAmplitudes );
 
     float currentAmplitude;
     float maxAmplitude;
@@ -326,23 +320,20 @@ void continousParticleUpdate()
       f.normalize();
       float amp =  0;
       if (maxAmplitude > 0)
-        amp = map(currentAmplitude, 0, maxAmplitude, 0., 5.);
-      //float amp =  0;
-      f.mult(random(r_min, r_max)+amp);
+      {
+        amp = map(currentAmplitude, 0, maxAmplitude, 0., 30.);
+      }   
+      f.mult(random(r_min, r_max) + amp);
       p.applyForce(f);
-      //p.flock(swarm.particles);
       p.flock(queryTree(p));
       p.doSubstepWithoutForce(deltaT);
     }  
 
     float spectrum_sum = 0;
     synchronized (spectrumMutex) {
-      zoff += euclidiean_distance(spectrum, old_spectrum)*deltaT*50;
+      zoff += euclidiean_distance(spectrum, old_spectrum)*deltaT*300;
     } 
-
-
-
-    deltaT =(float)(millis()-start_time)*6. /1000.;
+    deltaT =(millis()-start_time) /1000.;
   }
 }
 

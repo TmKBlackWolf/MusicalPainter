@@ -1,8 +1,8 @@
 class Boid extends Particle
 {
-  float alignValue = 0.02;
-  float cohesionValue = 0.04;
-  float seperationValue = 0.04;
+  float alignValue = 0.25;
+  float cohesionValue = 0.01;
+  float seperationValue = 0.5;
 
 
   float alignmentPerceptionRadius = 50;
@@ -38,9 +38,9 @@ class Boid extends Particle
     PVector cohesionForce = this.getCohesionForce(swarm);
     PVector separationForce = this.getSeparationForce(swarm);
 
-    alignmentForce.mult(alignValue);
-    cohesionForce.mult(cohesionValue);
-    separationForce.mult(seperationValue);
+    alignmentForce.mult(this.alignValue);
+    cohesionForce.mult(this.cohesionValue);
+    separationForce.mult(this.seperationValue);
 
     this.applyForce(alignmentForce);
     this.applyForce(cohesionForce);

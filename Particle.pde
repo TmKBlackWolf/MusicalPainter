@@ -14,7 +14,6 @@ class Particle  extends ReentrantLock implements Mapable {
 
   float res;
 
-  //PVector prev;
 
   Particle()
   {
@@ -57,7 +56,7 @@ class Particle  extends ReentrantLock implements Mapable {
     this.acc = new PVector(0, 0);
     this.wasUpdated = true;
 
-    this.res = -0.005;
+    this.res = -0.001;
   }
 
   void update()
@@ -86,7 +85,9 @@ class Particle  extends ReentrantLock implements Mapable {
 
   void applyForce(PVector f)
   {
+    this.lock();
     this.acc.add(f);
+    this.unlock();
   } 
 
   void resist(float deltaT)
