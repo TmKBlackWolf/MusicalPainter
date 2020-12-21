@@ -1,10 +1,11 @@
-import java.lang.*; //<>// //<>// //<>// //<>//
+import java.lang.*;  //<>//
 import java.util.concurrent.locks.ReentrantLock;
 
 class Particle  extends ReentrantLock implements Mapable {
   PVector pos;
   PVector vel;
   PVector drawVel;
+  PVector drawAcc;
   PVector acc;
   boolean wasUpdated;
 
@@ -51,29 +52,28 @@ class Particle  extends ReentrantLock implements Mapable {
   void init()
   {
 
-    this.drawVel = new PVector(0, 0);
+
     this.vel = new PVector(0, 0);
+    this.drawVel = new PVector(0, 0);
     this.acc = new PVector(0, 0);
+    this.drawAcc = new PVector(0, 0);
     this.wasUpdated = true;
 
-    this.res = -0.01;
+    this.res = -0.001;
   }
 
   void update()
   {
     //this.prev = this.pos.copy();
 
-    this.vel.add(this.acc);    
-    this.pos.add(this.vel);
-    this.drawVel.add(this.vel);
-    this.acc.mult(0);
-    this.wasUpdated = true;
+    this.update(1.);
   }
 
   void update(float deltaT)
   {
-
-    this.vel.add(PVector.mult(this.acc, deltaT));    
+    PVector dAcc = PVector.mult(this.acc, deltaT);
+    this.vel.add(dAcc); 
+    this.drawAcc.add(dAcc);
     PVector dVel = PVector.mult(vel, deltaT); 
     this.pos.add(dVel);
     this.drawVel.add(dVel);
@@ -137,8 +137,17 @@ class Particle  extends ReentrantLock implements Mapable {
     if (this.wasUpdated)
     {
       if (this.drawVel.mag() < height/4)
-        line(this.pos.x, this.pos.y, this.pos.x-this.drawVel.x, this.pos.y- this.drawVel.y);
+      {
+
+        curve(
+          this.pos.x-(2*this.drawVel.x) - this.drawAcc.x, this.pos.y-(2*this.drawVel.y) - this.drawAcc.y, 
+          this.pos.x - this.drawVel.x, this.pos.y - this.drawVel.y, 
+          this.pos.x, this.pos.y, 
+          this.pos.x + this.drawVel.x + this.drawAcc.x, this.pos.y + this.drawVel.y + this.drawAcc.y);
+        //line(this.pos.x, this.pos.y, this.pos.x-this.drawVel.x, this.pos.y- this.drawVel.y);
+      }
       this.drawVel.mult(0);
+      this.drawAcc.mult(0);
       this.wasUpdated = false;
     }
   }
@@ -151,8 +160,8 @@ class Particle  extends ReentrantLock implements Mapable {
 
   void edges()
   {
-    this.pos.x = (this.pos.x + 20 * width) % width;
-    this.pos.y = (this.pos.y + 20 * height) % height;
+    this.pos.x = ((this.pos.x % width) +  width) % width;
+    this.pos.y = ((this.pos.y % height) +  height) % height;
   }
 
 
