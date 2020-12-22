@@ -30,9 +30,6 @@ void setup() {
   colorMode(HSB);
   background(0);
 
-  
-
-
   if (useImages)
   {
     setupBaseImage();
@@ -86,7 +83,7 @@ void resizeImageToWidth(PImage img)
 
 void setupParticles()
 {
-  swarm = new BoidSwarm( bands*5, width, height); 
+  swarm = new BoidSwarm( bands*10, width, height); 
   buildTree();
 }
 

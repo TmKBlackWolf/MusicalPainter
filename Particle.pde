@@ -4,7 +4,9 @@ import java.util.concurrent.locks.ReentrantLock;
 class Particle  extends ReentrantLock implements Mapable {
   PVector pos;
   PVector vel;
+  PVector oldDrawVel;
   PVector drawVel;
+  PVector oldDrawAcc;
   PVector drawAcc;
   PVector acc;
   boolean wasUpdated;
@@ -54,8 +56,10 @@ class Particle  extends ReentrantLock implements Mapable {
 
 
     this.vel = new PVector(0, 0);
+    this.oldDrawVel = new PVector(0, 0);
     this.drawVel = new PVector(0, 0);
     this.acc = new PVector(0, 0);
+    this.oldDrawAcc = new PVector(0, 0);
     this.drawAcc = new PVector(0, 0);
     this.wasUpdated = true;
 
@@ -138,15 +142,15 @@ class Particle  extends ReentrantLock implements Mapable {
     {
       if (this.drawVel.mag() < height/4)
       {
-
         curve(
-          this.pos.x-(2*this.drawVel.x) - this.drawAcc.x, this.pos.y-(2*this.drawVel.y) - this.drawAcc.y, 
+          this.pos.x-(this.drawVel.x + this.oldDrawVel.x), this.pos.y-(this.drawVel.y + this.oldDrawVel.y ), 
           this.pos.x - this.drawVel.x, this.pos.y - this.drawVel.y, 
           this.pos.x, this.pos.y, 
-          this.pos.x + this.drawVel.x + this.drawAcc.x, this.pos.y + this.drawVel.y + this.drawAcc.y);
-        //line(this.pos.x, this.pos.y, this.pos.x-this.drawVel.x, this.pos.y- this.drawVel.y);
+          this.pos.x + this.drawVel.x + this.drawAcc.x / 2., this.pos.y + this.drawVel.y + this.drawAcc.y / 2.);
       }
+      this.oldDrawVel.set(drawVel);
       this.drawVel.mult(0);
+      this.oldDrawAcc.set(drawAcc);
       this.drawAcc.mult(0);
       this.wasUpdated = false;
     }
@@ -163,7 +167,6 @@ class Particle  extends ReentrantLock implements Mapable {
     this.pos.x = ((this.pos.x % width) +  width) % width;
     this.pos.y = ((this.pos.y % height) +  height) % height;
   }
-
 
   void doTimestep(PVector appliedForce, int numberOfSubiterations)
   {
@@ -185,6 +188,7 @@ class Particle  extends ReentrantLock implements Mapable {
     this.edges();  
     this.unlock();
   }
+  
   void doSubstepWithoutForce(float deltaT)
   {    
     this.lock();

@@ -1,5 +1,3 @@
-
-
 FFT fft;
 AudioIn in;
 int bands = 512;

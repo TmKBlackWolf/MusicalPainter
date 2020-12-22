@@ -5,7 +5,6 @@ class CylindricalNoiseField extends OpenSimplexNoise
   double circumference;
   double radius;
 
-
   private CylindricalNoiseField()
   {
   }

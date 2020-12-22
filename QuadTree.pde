@@ -10,7 +10,6 @@ class QuadTree <T extends Mapable>
   QuadTree southEastQuadrant;
   boolean isDivided;
 
-
   QuadTree()
   {
     this.initQuadrants();

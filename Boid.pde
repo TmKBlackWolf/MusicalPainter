@@ -4,7 +4,6 @@ class Boid extends Particle
   float cohesionValue = 0.25;
   float seperationValue = 0.5;
 
-
   float alignmentPerceptionRadius = 25;
   float cohesionPerceptionRadius = 50;
   float separationPerceptionRadius = 25;
