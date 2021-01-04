@@ -1,8 +1,8 @@
 class Boid extends Particle
 {
-  float alignValue = 0.5;
-  float cohesionValue = 0.25;
-  float seperationValue = 0.5;
+  float alignValue = 1.;
+  float cohesionValue = 0.5;
+  float seperationValue = 0.01;
 
   float alignmentPerceptionRadius = 25;
   float cohesionPerceptionRadius = 50;
@@ -115,4 +115,6 @@ class Boid extends Particle
       this.searchRadius * 2, 
       this.searchRadius * 2);
   }
+  
+
 }

@@ -64,7 +64,7 @@ void runContinousFFTUpdate()
   {
     int start_time = millis();
     updateFFT();
-    delay(5);
+    delay((int)((deltaT*1000)/3));
     deltaT_A =(millis()-start_time) /1000.;
   }
 }

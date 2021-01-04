@@ -1,25 +1,24 @@
 import processing.sound.*;   //<>//
 
-final boolean useImages = true;
+final boolean useImages = false;
 
-int inputFileIndex = 1;
+int inputFileIndex = 0;
 PImage baseImage;
 PVector ImageCenterOffset;
-int ImageChangeIntervalInSeconds = 6000;
+int ImageChangeIntervalInSeconds = 60 * 7;
 Object imageMutex = new Object();
 
-
-CylindricalNoiseField noiseField;
+TorusNoiseField noiseField;
 float scale = 0.001;
 float toff = 0;
-float changeFactor = 10.;
+float changeFactor = 1;
 float deltaT_A = 0.1;
 
 BoidSwarm swarm;
 QuadTree tree;
 Object treeMutex = new Object();
 float deltaT = 0.001;
-int r_max = 100;
+int r_max = 100;  
 int r_min = 80;
 
 
@@ -29,6 +28,7 @@ void setup() {
   fullScreen(P2D);
   colorMode(HSB);
   background(0);
+  frameRate(30);
 
   if (useImages)
   {
@@ -83,13 +83,13 @@ void resizeImageToWidth(PImage img)
 
 void setupParticles()
 {
-  swarm = new BoidSwarm( bands*10, width, height); 
+  swarm = new BoidSwarm( bands*5, width, height); 
   buildTree();
 }
 
 void setupNoiseField()
 { 
-  noiseField = new CylindricalNoiseField((long) random(0, 25000), (double) (height * scale));
+  noiseField = new TorusNoiseField((long) random(0, 25000), (double) (height * scale),  (double) (width * scale));
   noiseDetail(25);
 }
 
@@ -113,13 +113,10 @@ void printDebugInfo()
   println();
 }
 
-void draw() { 
+void draw() 
+{ 
   printDebugInfo();
-
-
   drawWarmUp();
-
-
 
   float currentAmplitudes[] = new float[bands];
   float maxAmplitudes[] = new float[bands];
@@ -164,7 +161,6 @@ void drawWarmUp()
       Boid p = swarm.particles[i]; 
       if (p.tryLock())
       {
-
         p.displayPos();
         p.unlock();
       }
@@ -189,7 +185,6 @@ void drawFFT()
 
   float fftViewScale = 1./4.;
 
-
   translate(width *(1- fftViewScale), height*(1-fftViewScale));
   float viewWidth = width * fftViewScale;
   float viewHeight = height *fftViewScale;
@@ -203,37 +198,41 @@ void drawFFT()
   float maxAmplitudes[] = new float[bands];
 
   loadCurrentSpectrum(currentAmplitudes, maxAmplitudes);
-
+  float barWidth = viewWidth / bands;
   for (int i = 0; i < bands; i++)  
   {
-    float barWidth = viewWidth / bands;
-    float currentAmplitude = currentAmplitudes[i];
+
     float maxAmplitude = maxAmplitudes[i];
+    float barHeight = map(maxAmplitude, 0, expectedMaxAmplitude, 0, viewHeight);
+
     stroke(127);
     fill(127);
     rect(
       i * barWidth, 
-      viewHeight-map(maxAmplitude, 0, expectedMaxAmplitude, 0, viewHeight), 
-      (i+1)*barWidth, 
-      viewHeight);
+      viewHeight-barHeight, 
+      barWidth, 
+      barHeight);
 
+    float currentAmplitude = currentAmplitudes[i];
+    barHeight = map(currentAmplitude, 0, expectedMaxAmplitude, 0, viewHeight);
+    
     stroke(i%256, 255, 255);
     fill(i%256, 255, 255);
     rect(
       i * barWidth, 
-      viewHeight-map(currentAmplitude, 0, expectedMaxAmplitude, 0, viewHeight), 
-      (i+1)*barWidth, 
-      viewHeight);
+      viewHeight-barHeight, 
+      barWidth, 
+      barHeight);
 
     float sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
     float bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
 
-    noStroke();
+    stroke(i%256, sat, bright);
     fill(i%256, sat, bright);
     rect(
       i * barWidth, 
       0, 
-      (i+1)*barWidth, 
+      barWidth, 
       barWidth*10);
   }
   popMatrix();
@@ -268,7 +267,7 @@ void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
   {
     sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
     bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
-    alpha = map(currentAmplitude, 0, maxAmplitude, 10, 255);
+    alpha = map(currentAmplitude, 0, maxAmplitude, 10, 64);
   }
 
   Boid p = swarm.particles[particleIndex]; 
@@ -395,9 +394,9 @@ void continousParticleUpdate()
       float amp =  0;
       if (maxAmplitude > 0)
       {
-        amp = map(currentAmplitude, 0, maxAmplitude, 0., 5*r_max);
+        amp = map(currentAmplitude, 0, maxAmplitude, 0., r_max);
       }   
-      f.mult(random(r_min, r_max) + amp);
+      f.mult(0.5*random(r_min, r_max) + amp);
       p.applyForce(f);
       p.flock(queryTree(p));
       p.doSubstepWithoutForce(deltaT);
