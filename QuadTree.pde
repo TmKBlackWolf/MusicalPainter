@@ -9,11 +9,18 @@ class QuadTree <T extends Mapable>
   QuadTree southWestQuadrant;
   QuadTree southEastQuadrant;
   boolean isDivided;
-
+  
   QuadTree()
   {
     this.initQuadrants();
     this.initArea(new Rectangle(0, 0, width, height));
+    this.initList(QuadTree.defaultMaxElements);
+  }
+
+  QuadTree(PGraphics canvas)
+  {
+    this.initQuadrants();
+    this.initArea(new Rectangle(0, 0, canvas.width, canvas.height));
     this.initList(QuadTree.defaultMaxElements);
   }
 

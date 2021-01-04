@@ -3,13 +3,15 @@ class Swarm {
   int areaHeight;
   int numberOfParticles;
   int magicNumber;
+  PGraphics canvas;
 
   Particle[] particles;  
 
-  Swarm(int numberOfParticles, int areaWidth, int areaHeight)
+  Swarm(PGraphics canvas, int numberOfParticles)
   {
-    this.areaWidth = areaWidth;
-    this.areaHeight = areaHeight;
+    this.canvas = canvas;
+    this.areaWidth = canvas.width;
+    this.areaHeight = canvas.height;
 
     this.numberOfParticles = numberOfParticles;
     this.initParticles();
@@ -21,7 +23,7 @@ class Swarm {
 
     for ( int i = 0; i < this.numberOfParticles; i++)
     {
-      this.particles[i] = new Particle(i % 256);
+      this.particles[i] = new Particle(this.canvas, i % 256);
     }    
   }
 }

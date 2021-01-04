@@ -1,10 +1,11 @@
 class BoidSwarm extends Swarm {
 
   Boid[] particles;
+  
 
-  BoidSwarm(int numberOfParticles, int areaWidth, int areaHeight)
+  BoidSwarm(PGraphics canvas, int numberOfParticles)
   {
-    super(numberOfParticles, areaWidth, areaHeight);
+    super(canvas, numberOfParticles);
   } 
 
 
@@ -14,7 +15,7 @@ class BoidSwarm extends Swarm {
 
     for ( int i = 0; i < this.numberOfParticles; i++)
     {
-      this.particles[i] = new Boid(i % 256);
+      this.particles[i] = new Boid(this.canvas, i % 256);
     }
   }
 }

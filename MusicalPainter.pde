@@ -21,7 +21,10 @@ float deltaT = 0.001;
 int r_max = 200;  
 int r_min = 160;
 
-int warmupCounter = 60*60;
+//int warmupCounter = 60*60;
+int warmupCounter = 0;
+
+PGraphics canvas;
 
 void verifyPVector(PVector p) throws Exception
 {
@@ -37,6 +40,9 @@ void setup() {
   colorMode(HSB);
   background(0);
   frameRate(30);
+  
+  canvas = createGraphics(width, height);
+
 
   if (useImages)
   {
@@ -63,7 +69,7 @@ void setupBaseImage()
   PImage newImage= loadImage(inputPath + filenames[inputFileIndex]);
 
   float imageAspectRatio = newImage.width/(float)newImage.height;
-  float screenAspectRatio = width/(float)height;
+  float screenAspectRatio = canvas.width/(float)canvas.height;
 
   if (  imageAspectRatio > screenAspectRatio)
   {
@@ -75,29 +81,29 @@ void setupBaseImage()
   synchronized(imageMutex)
   {
     baseImage = newImage;
-    ImageCenterOffset = new PVector((width - baseImage.width) /2., (height - baseImage.height) /2.);
+    ImageCenterOffset = new PVector((canvas.width - baseImage.width) /2., (canvas.height - baseImage.height) /2.);
   }
 }
 
 void resizeImageToHeight(PImage img)
 {
-  img.resize(0, height);
+  img.resize(0, canvas.height);
 }
 
 void resizeImageToWidth(PImage img)
 {
-  img.resize(width, 0);
+  img.resize(canvas.width, 0);
 }
 
 void setupParticles()
 {
-  swarm = new BoidSwarm( bands*5, width, height); 
+  swarm = new BoidSwarm(canvas, bands*5); 
   buildTree();
 }
 
 void setupNoiseField()
 { 
-  noiseField = new TorusNoiseField((long) random(0, 25000), (double) (height * scale), (double) (width * scale));
+  noiseField = new TorusNoiseField((long) random(0, 25000), (double) (canvas.height * scale), (double) (canvas.width * scale));
   noiseDetail(25);
 }
 
@@ -123,8 +129,13 @@ void printDebugInfo()
 
 void draw() 
 { 
+  background(255);
+  canvas.beginDraw();
+  canvas.colorMode(HSB);
+  
   printDebugInfo();
   drawWarmUp();
+  
 
   float currentAmplitudes[] = new float[bands];
   float maxAmplitudes[] = new float[bands];
@@ -143,6 +154,17 @@ void draw()
       drawParticle(i, currentAmplitude, maxAmplitude );
     }
   }
+  
+  canvas.endDraw();
+  int numberTiles = 6;
+  for(int i = 0; i < numberTiles; i++)
+  {
+    for( int j = 0; j < numberTiles; j++)
+    {
+      image(canvas, i * (width/numberTiles), j * (height/numberTiles), width/numberTiles, height/numberTiles);
+    }
+  }
+  
 }
 
 
@@ -150,16 +172,16 @@ void drawWarmUp()
 {
   if (warmupCounter > 0)
   {    
-    fill(0);
-    noStroke();
-    rect(0, 0, width, height);
+    canvas.fill(0);
+    canvas.noStroke();
+    canvas.rect(0, 0, canvas.width, canvas.height);
     if (useImages)
     {
-      image(baseImage, ImageCenterOffset.x, ImageCenterOffset.y);
+      canvas.image(baseImage, ImageCenterOffset.x, ImageCenterOffset.y);
     }
     
-    stroke(255);
-    noFill();
+    canvas.stroke(255);
+    canvas.noFill();
     //showTree();
     showField();
     strokeWeight(3);
@@ -177,9 +199,9 @@ void drawWarmUp()
 
     if (warmupCounter == 1)
     {
-      noStroke();
-      fill(0);
-      rect(0, 0, width, height);
+      canvas.noStroke();
+      canvas.fill(0);
+      canvas.rect(0, 0, canvas.width, canvas.height);
     }
     warmupCounter--;
   }
@@ -188,18 +210,18 @@ void drawWarmUp()
 
 void drawFFT()
 {
-  pushMatrix();
+  canvas.pushMatrix();
 
   float fftViewScale = 1./4.;
 
-  translate(width *(1- fftViewScale), height*(1-fftViewScale));
-  float viewWidth = width * fftViewScale;
-  float viewHeight = height *fftViewScale;
+  canvas.translate(canvas.width *(1- fftViewScale), canvas.height*(1-fftViewScale));
+  float viewWidth = canvas.width * fftViewScale;
+  float viewHeight = canvas.height *fftViewScale;
 
-  strokeWeight(1);
-  stroke(127);
-  fill(255);
-  rect(0, 0, viewWidth, viewHeight);
+  canvas.strokeWeight(1);
+  canvas.stroke(127);
+  canvas.fill(255);
+  canvas.rect(0, 0, viewWidth, viewHeight);
 
   float currentAmplitudes[] = new float[bands];
   float maxAmplitudes[] = new float[bands];
@@ -212,9 +234,9 @@ void drawFFT()
     float maxAmplitude = maxAmplitudes[i];
     float barHeight = map(maxAmplitude, 0, expectedMaxAmplitude, 0, viewHeight);
 
-    stroke(127);
-    fill(127);
-    rect(
+    canvas.stroke(127);
+    canvas.fill(127);
+    canvas.rect(
       i * barWidth, 
       viewHeight-barHeight, 
       barWidth, 
@@ -223,9 +245,9 @@ void drawFFT()
     float currentAmplitude = currentAmplitudes[i];
     barHeight = map(currentAmplitude, 0, expectedMaxAmplitude, 0, viewHeight);
 
-    stroke(i%256, 255, 255);
-    fill(i%256, 255, 255);
-    rect(
+    canvas.stroke(i%256, 255, 255);
+    canvas.fill(i%256, 255, 255);
+    canvas.rect(
       i * barWidth, 
       viewHeight-barHeight, 
       barWidth, 
@@ -234,15 +256,15 @@ void drawFFT()
     float sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
     float bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
 
-    stroke(i%256, sat, bright);
-    fill(i%256, sat, bright);
-    rect(
+    canvas.stroke(i%256, sat, bright);
+    canvas.fill(i%256, sat, bright);
+    canvas.rect(
       i * barWidth, 
       0, 
       barWidth, 
       barWidth*10);
   }
-  popMatrix();
+  canvas.popMatrix();
 }
 
 
@@ -260,7 +282,7 @@ void drawParticleUsingImage(int particleIndex, float currentAmplitude, float max
     alpha = map(currentAmplitude, 0, maxAmplitude, 10, 64);
   }
 
-  stroke(p.colour, sat, bright, alpha);
+  canvas.stroke(p.colour, sat, bright, alpha);
   displayParticleIfUnlocked(p);
 }
 
@@ -278,13 +300,13 @@ void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
   }
 
   Boid p = swarm.particles[particleIndex]; 
-  stroke(p.colour, sat, bright, alpha);
+  canvas.stroke(p.colour, sat, bright, alpha);
   displayParticleIfUnlocked(p);
 }
 
 void displayParticleIfUnlocked(Particle p)
 {
-  noFill();
+  canvas.noFill();
   if (p.tryLock())
   {    
     p.display();
@@ -297,26 +319,26 @@ void buildTree()
 {
   synchronized(treeMutex)
   {
-    tree = new QuadTree();
+    tree = new QuadTree(canvas);
     tree.insert(swarm.particles);
   }
 }
 
 void showField()
 {
-  for (int x = 0; x < width; x += 50)
+  for (int x = 0; x < canvas.width; x += 50)
   {
-    for (int y = 0; y < height; y += 50)
+    for (int y = 0; y < canvas.height; y += 50)
     {
 
       float noise_val = (float) noiseField.eval(x*scale, y*scale, toff);
       PVector f =  PVector.fromAngle(noise_val*PI*4);
       f.normalize();
       f.mult(25);
-      strokeWeight(1);
-      line(x, y, x + f.x, y + f.y);
-      strokeWeight(3);
-      point(x + f.x, y + f.y);
+      canvas.strokeWeight(1);
+      canvas.line(x, y, x + f.x, y + f.y);
+      canvas.strokeWeight(3);
+      canvas.point(x + f.x, y + f.y);
     }
   }
 }

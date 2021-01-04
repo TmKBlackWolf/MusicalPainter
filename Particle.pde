@@ -12,29 +12,35 @@ class Particle  extends ReentrantLock implements Mapable {
   boolean wasUpdated;
 
 
+  PGraphics canvas;
+
+
 
   int colour;
 
   float res;
 
 
-  Particle()
+  Particle(PGraphics canvas)
   {
-    this.pos = new PVector(random(width), random(height));
+    this.canvas = canvas;
+    this.pos = new PVector(random(canvas.width), random(canvas.height));
     this.init();
     this.colour = 0;
   }
 
 
-  Particle(int colour)
+  Particle(PGraphics canvas, int colour)
   {
-    this.pos = new PVector(random(width), random(height));
+    this.canvas = canvas;
+    this.pos = new PVector(random(canvas.width), random(canvas.height));
     this.init();
     this.colour = colour;
   }
 
-  Particle(int x, int y)
+  Particle(PGraphics canvas, int x, int y)
   {
+    this.canvas = canvas;
     this.pos = new PVector(x, y);
 
     this.init();
@@ -42,8 +48,9 @@ class Particle  extends ReentrantLock implements Mapable {
   }
 
 
-  Particle(int x, int y, int colour)
+  Particle(PGraphics canvas, int x, int y, int colour)
   {
+    this.canvas = canvas;
     this.pos = new PVector(x, y);
     this.init();
 
@@ -53,8 +60,6 @@ class Particle  extends ReentrantLock implements Mapable {
 
   void init()
   {
-
-
     this.vel = new PVector(0, 0);
     this.oldDrawVel = new PVector(0, 0);
     this.drawVel = new PVector(0, 0);
@@ -73,7 +78,6 @@ class Particle  extends ReentrantLock implements Mapable {
 
   void update(float deltaT)
   {
-
     PVector dAcc = PVector.mult(this.acc, deltaT);
     this.vel.add(dAcc); 
     this.drawAcc.add(dAcc);
@@ -140,9 +144,9 @@ class Particle  extends ReentrantLock implements Mapable {
   { 
     if (this.wasUpdated)
     {
-      if (this.drawVel.mag() < height/4)
+      if (this.drawVel.mag() < this.canvas.height/4)
       {
-        curve(
+        this.canvas.curve(
           this.pos.x-(this.drawVel.x + this.oldDrawVel.x), this.pos.y-(this.drawVel.y + this.oldDrawVel.y ), 
           this.pos.x - this.drawVel.x, this.pos.y - this.drawVel.y, 
           this.pos.x, this.pos.y, 
@@ -159,13 +163,13 @@ class Particle  extends ReentrantLock implements Mapable {
 
   void displayPos()
   {
-    point(this.pos.x, this.pos.y);
+    this.canvas.point(this.pos.x, this.pos.y);
   }
 
   void edges()
   {
-    this.pos.x = ((this.pos.x % width) +  width) % width;
-    this.pos.y = ((this.pos.y % height) +  height) % height;
+    this.pos.x = ((this.pos.x % this.canvas.width) + this.canvas.width) % this.canvas.width;
+    this.pos.y = ((this.pos.y % this.canvas.height) + this.canvas.height) % this.canvas.height;
   }
 
 

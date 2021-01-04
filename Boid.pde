@@ -13,26 +13,26 @@ class Boid extends Particle
   final float maximumForce = 100*baseForce;
 
   float searchRadius = 50;
-  Boid()
+  Boid(PGraphics canvas)
   {
-    super();
+    super(canvas);
   }
 
 
-  Boid(int colour)
+  Boid(PGraphics canvas, int colour)
   {
-    super(colour);
+    super(canvas, colour);
   }
 
-  Boid(int x, int y)
+  Boid(PGraphics canvas, int x, int y)
   {
-    super(x, y);
+    super(canvas, x, y);
   }
 
 
-  Boid(int x, int y, int colour)
+  Boid(PGraphics canvas, int x, int y, int colour)
   {
-    super(x, y, colour);
+    super(canvas, x, y, colour);
   }
 
   void flock(Boid[] swarm)
