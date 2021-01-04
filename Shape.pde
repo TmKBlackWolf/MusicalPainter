@@ -2,14 +2,12 @@ abstract class Shape
 {
   float x;
   float y;
-  Shape(float x,float y)
+  Shape(float x, float y)
   {
     this.x = x;
     this.y = y;
   }
 }
-
-
 
 class Rectangle extends Shape
 {
@@ -42,7 +40,7 @@ class Rectangle extends Shape
       elementY >= this.y && 
       elementY < (this.y+this.rectHeight));
   }
-  
+
   void show()
   {
     rect(this.x, this.y, this.rectWidth, this.rectHeight);

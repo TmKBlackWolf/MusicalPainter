@@ -2,9 +2,6 @@ class BoidSwarm extends Swarm {
 
   Boid[] particles;
 
-
-
-
   BoidSwarm(int numberOfParticles, int areaWidth, int areaHeight)
   {
     super(numberOfParticles, areaWidth, areaHeight);

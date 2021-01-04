@@ -1,13 +1,16 @@
 class Boid extends Particle
 {
-  float alignValue = 0.25;
-  float cohesionValue = 0.01;
-  float seperationValue = 0.5;
+  final float baseForce = r_max/100.;
 
+  final float alignValue = 1.;
+  final float cohesionValue = 0.5;
+  final float seperationValue = 0.01;
 
-  float alignmentPerceptionRadius = 50;
-  float cohesionPerceptionRadius = 50;
-  float separationPerceptionRadius = 50;
+  final float alignmentPerceptionRadius = 25;
+  final float cohesionPerceptionRadius = 50;
+  final float separationPerceptionRadius = 25;
+
+  final float maximumForce = 100*baseForce;
 
   float searchRadius = 50;
   Boid()
@@ -38,13 +41,15 @@ class Boid extends Particle
     PVector cohesionForce = this.getCohesionForce(swarm);
     PVector separationForce = this.getSeparationForce(swarm);
 
-    alignmentForce.mult(this.alignValue);
-    cohesionForce.mult(this.cohesionValue);
-    separationForce.mult(this.seperationValue);
+    alignmentForce.mult(this.alignValue * this.baseForce);
+    cohesionForce.mult(this.cohesionValue * this.baseForce);
+    separationForce.mult(this.seperationValue * this.baseForce);
 
-    this.applyForce(alignmentForce);
-    this.applyForce(cohesionForce);
-    this.applyForce(separationForce);
+    PVector totalForce = PVector.add(alignmentForce, cohesionForce);
+    totalForce.add(separationForce);
+    totalForce.limit(maximumForce);
+
+    this.applyForce(totalForce);
   }
 
   PVector getAlignmentForce(Boid[] swarm) {
@@ -52,7 +57,7 @@ class Boid extends Particle
     PVector steeringForce = new PVector();
     int total = 0;
     for (Particle other : swarm) {
-      
+
       float d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
       if (other != this && d < this.alignmentPerceptionRadius) {
         steeringForce.add(other.vel);
@@ -63,6 +68,7 @@ class Boid extends Particle
       steeringForce.div(total);      
       steeringForce.sub(this.vel);
     }
+
     return steeringForce;
   }
 
@@ -83,6 +89,7 @@ class Boid extends Particle
       steeringForce.div(total);
       steeringForce.sub(this.pos);
     }
+
     return steeringForce;
   }
 
@@ -96,6 +103,10 @@ class Boid extends Particle
       float d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
       if (other != this && d < this.separationPerceptionRadius) {
         PVector diff = PVector.sub(this.pos, other.pos);
+        if (d < 0.001)
+        {
+          d = 0.001;
+        }
         diff.div(d * d);
         steeringForce.add(diff);
         total++;
@@ -105,6 +116,7 @@ class Boid extends Particle
       steeringForce.div(total);
       steeringForce.sub(this.vel);
     }
+
     return steeringForce;
   }
 

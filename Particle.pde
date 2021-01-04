@@ -1,10 +1,13 @@
-import java.lang.*; //<>// //<>//
+import java.lang.*;  //<>// //<>//
 import java.util.concurrent.locks.ReentrantLock;
 
 class Particle  extends ReentrantLock implements Mapable {
   PVector pos;
   PVector vel;
+  PVector oldDrawVel;
   PVector drawVel;
+  PVector oldDrawAcc;
+  PVector drawAcc;
   PVector acc;
   boolean wasUpdated;
 
@@ -51,9 +54,13 @@ class Particle  extends ReentrantLock implements Mapable {
   void init()
   {
 
-    this.drawVel = new PVector(0, 0);
+
     this.vel = new PVector(0, 0);
+    this.oldDrawVel = new PVector(0, 0);
+    this.drawVel = new PVector(0, 0);
     this.acc = new PVector(0, 0);
+    this.oldDrawAcc = new PVector(0, 0);
+    this.drawAcc = new PVector(0, 0);
     this.wasUpdated = true;
 
     this.res = -0.001;
@@ -61,19 +68,15 @@ class Particle  extends ReentrantLock implements Mapable {
 
   void update()
   {
-    //this.prev = this.pos.copy();
-
-    this.vel.add(this.acc);    
-    this.pos.add(this.vel);
-    this.drawVel.add(this.vel);
-    this.acc.mult(0);
-    this.wasUpdated = true;
+    this.update(1.);
   }
 
   void update(float deltaT)
   {
 
-    this.vel.add(PVector.mult(this.acc, deltaT));    
+    PVector dAcc = PVector.mult(this.acc, deltaT);
+    this.vel.add(dAcc); 
+    this.drawAcc.add(dAcc);
     PVector dVel = PVector.mult(vel, deltaT); 
     this.pos.add(dVel);
     this.drawVel.add(dVel);
@@ -90,25 +93,26 @@ class Particle  extends ReentrantLock implements Mapable {
     this.unlock();
   } 
 
-  void resist(float deltaT)
-  {
+  void resist()
+  {    
     PVector f = this.vel.copy();
 
     f.normalize();
 
     double v_sq = mag_double(this.vel);
     double v_sq_1 = v_sq * this.res;
-    double v_sq_2 = v_sq_1*mag_double(this.vel);
+    double v_sq_2 = v_sq_1 * v_sq;
     float f_v_sq =(float) v_sq_2;
+
     f.mult(f_v_sq);
 
-    float test = f.mag();
-    if ( test != test)
-    {
-      this.applyForce(PVector.mult(this.vel, -1.));
-    } else
-    {
+    try {
+      verifyPVector(f);
       this.applyForce(f);
+    }
+    catch(Exception e)
+    {
+      this.acc.mult(0.);
     }
   }
 
@@ -137,8 +141,17 @@ class Particle  extends ReentrantLock implements Mapable {
     if (this.wasUpdated)
     {
       if (this.drawVel.mag() < height/4)
-        line(this.pos.x, this.pos.y, this.pos.x-this.drawVel.x, this.pos.y- this.drawVel.y);
+      {
+        curve(
+          this.pos.x-(this.drawVel.x + this.oldDrawVel.x), this.pos.y-(this.drawVel.y + this.oldDrawVel.y ), 
+          this.pos.x - this.drawVel.x, this.pos.y - this.drawVel.y, 
+          this.pos.x, this.pos.y, 
+          this.pos.x + this.drawVel.x + this.drawAcc.x / 2., this.pos.y + this.drawVel.y + this.drawAcc.y / 2.);
+      }
+      this.oldDrawVel.set(drawVel);
       this.drawVel.mult(0);
+      this.oldDrawAcc.set(drawAcc);
+      this.drawAcc.mult(0);
       this.wasUpdated = false;
     }
   }
@@ -151,35 +164,25 @@ class Particle  extends ReentrantLock implements Mapable {
 
   void edges()
   {
-    this.pos.x = (this.pos.x + 20 * width) % width;
-    this.pos.y = (this.pos.y + 20 * height) % height;
+    this.pos.x = ((this.pos.x % width) +  width) % width;
+    this.pos.y = ((this.pos.y % height) +  height) % height;
   }
 
-
-  void doTimestep(PVector appliedForce, int numberOfSubiterations)
-  {
-    float deltaT = 1/(float)numberOfSubiterations;   
-
-    for ( int i = 0; i < numberOfSubiterations; i++)
-    {
-      doSubstep(appliedForce, deltaT);
-    }
-  }
 
   void doSubstep(PVector appliedForce, float deltaT)
   {
-    //PVector deltaF = appliedForce.mult(deltaT);
     this.lock();
     this.applyForce(appliedForce);
-    this.resist(deltaT);
+    this.resist();
     this.update(deltaT);
     this.edges();  
     this.unlock();
   }
+
   void doSubstepWithoutForce(float deltaT)
   {    
     this.lock();
-    this.resist(deltaT);
+    this.resist();
     this.update(deltaT);
     this.edges();  
     this.unlock();
