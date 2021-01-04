@@ -28,7 +28,6 @@ void setup() {
   fullScreen(P2D);
   colorMode(HSB);
   background(0);
-  frameRate(30);
 
   if (useImages)
   {

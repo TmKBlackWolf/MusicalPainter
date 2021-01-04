@@ -4,7 +4,7 @@ int bands = 512;
 float[] spectrum = new float[bands];
 float[] old_spectrum = new float[bands]; 
 float max_a[] = new float[bands];
-float expectedMaxAmplitude = 0.1;
+float expectedMaxAmplitude = 0.2;
 Object spectrumMutex = new Object();
 
 
@@ -43,7 +43,7 @@ void updateFFT()
     for (int i = 0; i < bands; i++)
     {
       old_spectrum[i] = spectrum[i];
-      max_a[i] *= 0.9995;
+      max_a[i] *= pow(0.75,deltaT_A);
     }
 
     fft.analyze(spectrum);
