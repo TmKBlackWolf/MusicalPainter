@@ -1,4 +1,4 @@
-import java.lang.*;  //<>//
+import java.lang.*;  //<>// //<>//
 import java.util.concurrent.locks.ReentrantLock;
 
 class Particle  extends ReentrantLock implements Mapable {
@@ -68,13 +68,12 @@ class Particle  extends ReentrantLock implements Mapable {
 
   void update()
   {
-    //this.prev = this.pos.copy();
-
     this.update(1.);
   }
 
   void update(float deltaT)
   {
+
     PVector dAcc = PVector.mult(this.acc, deltaT);
     this.vel.add(dAcc); 
     this.drawAcc.add(dAcc);
@@ -94,8 +93,8 @@ class Particle  extends ReentrantLock implements Mapable {
     this.unlock();
   } 
 
-  void resist(float deltaT)
-  {
+  void resist()
+  {    
     PVector f = this.vel.copy();
 
     f.normalize();
@@ -104,15 +103,16 @@ class Particle  extends ReentrantLock implements Mapable {
     double v_sq_1 = v_sq * this.res;
     double v_sq_2 = v_sq_1 * v_sq;
     float f_v_sq =(float) v_sq_2;
+
     f.mult(f_v_sq);
 
-    float test = f.mag();
-    if ( test != test)
-    {      
-      this.applyForce(PVector.mult(this.vel, -1.));
-    } else
-    {
+    try {
+      verifyPVector(f);
       this.applyForce(f);
+    }
+    catch(Exception e)
+    {
+      this.acc.mult(0.);
     }
   }
 
@@ -168,31 +168,21 @@ class Particle  extends ReentrantLock implements Mapable {
     this.pos.y = ((this.pos.y % height) +  height) % height;
   }
 
-  void doTimestep(PVector appliedForce, int numberOfSubiterations)
-  {
-    float deltaT = 1/(float)numberOfSubiterations;   
-
-    for ( int i = 0; i < numberOfSubiterations; i++)
-    {
-      doSubstep(appliedForce, deltaT);
-    }
-  }
 
   void doSubstep(PVector appliedForce, float deltaT)
   {
-    //PVector deltaF = appliedForce.mult(deltaT);
     this.lock();
     this.applyForce(appliedForce);
-    this.resist(deltaT);
+    this.resist();
     this.update(deltaT);
     this.edges();  
     this.unlock();
   }
-  
+
   void doSubstepWithoutForce(float deltaT)
   {    
     this.lock();
-    this.resist(deltaT);
+    this.resist();
     this.update(deltaT);
     this.edges();  
     this.unlock();

@@ -11,23 +11,32 @@ Object imageMutex = new Object();
 TorusNoiseField noiseField;
 float scale = 0.001;
 float toff = 0;
-float changeFactor = 1;
+float changeFactor = 0.5;
 float deltaT_A = 0.1;
 
 BoidSwarm swarm;
 QuadTree tree;
 Object treeMutex = new Object();
 float deltaT = 0.001;
-int r_max = 100;  
-int r_min = 80;
-
+int r_max = 200;  
+int r_min = 160;
 
 int warmupCounter = 60*60;
+
+void verifyPVector(PVector p) throws Exception
+{
+  float test = p.mag();
+  if (test != test)
+  {
+    throw new Exception("NaN magnitude PVector");
+  }
+}
 
 void setup() {
   fullScreen(P2D);
   colorMode(HSB);
   background(0);
+  frameRate(30);
 
   if (useImages)
   {
@@ -88,7 +97,7 @@ void setupParticles()
 
 void setupNoiseField()
 { 
-  noiseField = new TorusNoiseField((long) random(0, 25000), (double) (height * scale),  (double) (width * scale));
+  noiseField = new TorusNoiseField((long) random(0, 25000), (double) (height * scale), (double) (width * scale));
   noiseDetail(25);
 }
 
@@ -148,8 +157,7 @@ void drawWarmUp()
     {
       image(baseImage, ImageCenterOffset.x, ImageCenterOffset.y);
     }
-
-
+    
     stroke(255);
     noFill();
     //showTree();
@@ -214,7 +222,7 @@ void drawFFT()
 
     float currentAmplitude = currentAmplitudes[i];
     barHeight = map(currentAmplitude, 0, expectedMaxAmplitude, 0, viewHeight);
-    
+
     stroke(i%256, 255, 255);
     fill(i%256, 255, 255);
     rect(
@@ -384,7 +392,7 @@ void continousParticleUpdate()
 
       Boid p= swarm.particles[i];  
 
-      float noise_val =(float) noiseField.eval(
+      float noise_val = (float) noiseField.eval(
         p.pos.x * scale, 
         p.pos.y * scale, 
         toff + ((p.colour - 128) * scale));
