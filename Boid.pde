@@ -58,7 +58,7 @@ class Boid extends Particle
     int total = 0;
     for (Particle other : swarm) {
 
-      float d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
+      float d = dist(this.currentPosition.x, this.currentPosition.y, other.currentPosition.x, other.currentPosition.y);
       if (other != this && d < this.alignmentPerceptionRadius) {
         steeringForce.add(other.vel);
         total++;
@@ -79,15 +79,15 @@ class Boid extends Particle
     PVector steeringForce = new PVector();
     int total = 0;
     for (Particle other : swarm) {
-      float d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
+      float d = dist(this.currentPosition.x, this.currentPosition.y, other.currentPosition.x, other.currentPosition.y);
       if (other != this && d < this.cohesionPerceptionRadius) {
-        steeringForce.add(other.pos);
+        steeringForce.add(other.currentPosition);
         total++;
       }
     }
     if (total > 0) {
       steeringForce.div(total);
-      steeringForce.sub(this.pos);
+      steeringForce.sub(this.currentPosition);
     }
 
     return steeringForce;
@@ -100,9 +100,9 @@ class Boid extends Particle
     PVector steeringForce = new PVector();
     int total = 0;
     for (Particle other : swarm) {
-      float d = dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
+      float d = dist(this.currentPosition.x, this.currentPosition.y, other.currentPosition.x, other.currentPosition.y);
       if (other != this && d < this.separationPerceptionRadius) {
-        PVector diff = PVector.sub(this.pos, other.pos);
+        PVector diff = PVector.sub(this.currentPosition, other.currentPosition);
         if (d < 0.001)
         {
           d = 0.001;
@@ -123,8 +123,8 @@ class Boid extends Particle
   Rectangle getSearchArea()
   {
     return new Rectangle(
-      this.pos.x - searchRadius, 
-      this.pos.y - searchRadius, 
+      this.currentPosition.x - searchRadius, 
+      this.currentPosition.y - searchRadius, 
       this.searchRadius * 2, 
       this.searchRadius * 2);
   }

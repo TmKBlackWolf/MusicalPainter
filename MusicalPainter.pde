@@ -1,4 +1,4 @@
-import processing.sound.*;   //<>//
+import processing.sound.*;   //<>// //<>//
 
 final boolean useImages = false;
 
@@ -33,7 +33,7 @@ void verifyPVector(PVector p) throws Exception
 }
 
 void setup() {
-  fullScreen(P2D);
+  fullScreen(P3D);
   colorMode(HSB);
   background(0);
   frameRate(30);
@@ -91,7 +91,7 @@ void resizeImageToWidth(PImage img)
 
 void setupParticles()
 {
-  swarm = new BoidSwarm( bands*5, width, height); 
+  swarm = new BoidSwarm( bands , width, height); 
   buildTree();
 }
 
@@ -123,6 +123,14 @@ void printDebugInfo()
 
 void draw() 
 { 
+  background(0);
+  float r = (height/2.0) / tan(PI*30.0 / 180.0);
+  println(r);
+  
+  
+
+
+
   printDebugInfo();
   drawWarmUp();
 
@@ -143,6 +151,8 @@ void draw()
       drawParticle(i, currentAmplitude, maxAmplitude );
     }
   }
+  
+  //camera(width/2.0 +r* cos((frameCount/360.)*TWO_PI), height/2.0, r *sin((frameCount/360.)*TWO_PI) , width/2.0, height/2.0, 0, 0, 1, 0);
 }
 
 
@@ -157,7 +167,7 @@ void drawWarmUp()
     {
       image(baseImage, ImageCenterOffset.x, ImageCenterOffset.y);
     }
-    
+
     stroke(255);
     noFill();
     //showTree();
@@ -269,12 +279,12 @@ void drawParticle(int particleIndex, float currentAmplitude, float maxAmplitude)
 {
   float sat = 0;
   float bright = 0;
-  float alpha = 0;
+  float alpha = 255;
   if (maxAmplitude > 0)
   {
     sat = map(currentAmplitude, 0, maxAmplitude, 127, 255);
     bright = map(currentAmplitude, 0, maxAmplitude, 127, 255);
-    alpha = map(currentAmplitude, 0, maxAmplitude, 10, 64);
+    //alpha = map(currentAmplitude, 0, maxAmplitude, 10, 64);
   }
 
   Boid p = swarm.particles[particleIndex]; 
@@ -287,7 +297,7 @@ void displayParticleIfUnlocked(Particle p)
   noFill();
   if (p.tryLock())
   {    
-    p.display();
+    p.displayPath();
     p.unlock();
   }
 }
@@ -393,8 +403,8 @@ void continousParticleUpdate()
       Boid p= swarm.particles[i];  
 
       float noise_val = (float) noiseField.eval(
-        p.pos.x * scale, 
-        p.pos.y * scale, 
+        p.currentPosition.x * scale, 
+        p.currentPosition.y * scale, 
         toff + ((p.colour - 128) * scale));
       PVector f =  PVector.fromAngle(noise_val*PI*4);
       f.normalize();

@@ -2,7 +2,8 @@ import java.lang.*;  //<>// //<>//
 import java.util.concurrent.locks.ReentrantLock;
 
 class Particle  extends ReentrantLock implements Mapable {
-  PVector pos;
+  ArrayList<PVector> previousPositions = new ArrayList<PVector>();
+  PVector currentPosition;
   PVector vel;
   PVector oldDrawVel;
   PVector drawVel;
@@ -20,7 +21,7 @@ class Particle  extends ReentrantLock implements Mapable {
 
   Particle()
   {
-    this.pos = new PVector(random(width), random(height));
+    this.currentPosition = new PVector(random(width), random(height));
     this.init();
     this.colour = 0;
   }
@@ -28,14 +29,14 @@ class Particle  extends ReentrantLock implements Mapable {
 
   Particle(int colour)
   {
-    this.pos = new PVector(random(width), random(height));
+    this.currentPosition = new PVector(random(width), random(height));
     this.init();
     this.colour = colour;
   }
 
   Particle(int x, int y)
   {
-    this.pos = new PVector(x, y);
+    this.currentPosition = new PVector(x, y);
 
     this.init();
     this.colour = 0;
@@ -44,7 +45,7 @@ class Particle  extends ReentrantLock implements Mapable {
 
   Particle(int x, int y, int colour)
   {
-    this.pos = new PVector(x, y);
+    this.currentPosition = new PVector(x, y);
     this.init();
 
     this.colour = colour;
@@ -78,7 +79,12 @@ class Particle  extends ReentrantLock implements Mapable {
     this.vel.add(dAcc); 
     this.drawAcc.add(dAcc);
     PVector dVel = PVector.mult(vel, deltaT); 
-    this.pos.add(dVel);
+    //this.previousPositions.add(this.currentPosition.copy());
+    //if (this.previousPositions.size() >= 60)
+    //{
+    //  this.previousPositions.remove(0);
+    //}
+    this.currentPosition.add(dVel);
     this.drawVel.add(dVel);
     this.acc.mult(0);
     this.wasUpdated = true;
@@ -118,12 +124,12 @@ class Particle  extends ReentrantLock implements Mapable {
 
   float getX()
   {
-    return this.pos.x;
+    return this.currentPosition.x;
   }
 
   float getY()
   {
-    return this.pos.y;
+    return this.currentPosition.y;
   }
 
 
@@ -143,10 +149,10 @@ class Particle  extends ReentrantLock implements Mapable {
       if (this.drawVel.mag() < height/4)
       {
         curve(
-          this.pos.x-(this.drawVel.x + this.oldDrawVel.x), this.pos.y-(this.drawVel.y + this.oldDrawVel.y ), 
-          this.pos.x - this.drawVel.x, this.pos.y - this.drawVel.y, 
-          this.pos.x, this.pos.y, 
-          this.pos.x + this.drawVel.x + this.drawAcc.x / 2., this.pos.y + this.drawVel.y + this.drawAcc.y / 2.);
+          this.currentPosition.x-(this.drawVel.x + this.oldDrawVel.x), this.currentPosition.y-(this.drawVel.y + this.oldDrawVel.y ), 
+          this.currentPosition.x - this.drawVel.x, this.currentPosition.y - this.drawVel.y, 
+          this.currentPosition.x, this.currentPosition.y, 
+          this.currentPosition.x + this.drawVel.x + this.drawAcc.x / 2., this.currentPosition.y + this.drawVel.y + this.drawAcc.y / 2.);
       }
       this.oldDrawVel.set(drawVel);
       this.drawVel.mult(0);
@@ -156,16 +162,53 @@ class Particle  extends ReentrantLock implements Mapable {
     }
   }
 
+  void displayPath()
+  { 
+    if (this.previousPositions.size() > 0)
+    {
+
+      beginShape();
+      PVector previous = this.previousPositions.get(0);
+      curveVertex(previous.x, previous.y, 0.);
+      for (int i = 1; i < this.previousPositions.size(); i ++)
+      {     
+
+        PVector current = this.previousPositions.get(i);
+        if (dist(previous.x, previous.y, current.x, current.y) >= height/4)
+        {
+          endShape();
+          i+=4;
+          beginShape();
+        } else
+        {
+          curveVertex(current.x, current.y, i*30);
+        }
+        previous = current;
+      }
+      endShape();
+    }
+
+    if (this.wasUpdated)
+    {
+      this.previousPositions.add(this.currentPosition.copy()); 
+      this.wasUpdated = false;
+    }
+    if (this.previousPositions.size() >= 60)
+    {
+      this.previousPositions.remove(0);
+    }
+  }
+
 
   void displayPos()
   {
-    point(this.pos.x, this.pos.y);
+    point(this.currentPosition.x, this.currentPosition.y);
   }
 
   void edges()
   {
-    this.pos.x = ((this.pos.x % width) +  width) % width;
-    this.pos.y = ((this.pos.y % height) +  height) % height;
+    this.currentPosition.x = ((this.currentPosition.x % width) +  width) % width;
+    this.currentPosition.y = ((this.currentPosition.y % height) +  height) % height;
   }
 
 
