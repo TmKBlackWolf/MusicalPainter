@@ -1,0 +1,6 @@
+[submodule "OpenSimplexNoise"]
+	path = dependencies/OpenSimplexNoise
+	url = https://github.com/deerel/OpenSimplexNoise
+[submodule "glfw"]
+	path = dependencies/glfw
+	url = https://github.com/glfw/glfw
